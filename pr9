@@ -1,0 +1,63 @@
+# PR9: Clustering - K-Means (Elbow Method) and Hierarchical (Dendrogram)
+# Needs Mall_Customers.csv in the same folder
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans, AgglomerativeClustering
+from sklearn.metrics import silhouette_score
+from scipy.cluster.hierarchy import dendrogram, linkage
+
+# ---------- Load and preprocess ----------
+df = pd.read_csv("Mall_Customers.csv")
+print("Shape:", df.shape)
+print(df.head())
+print("Missing values:", df.isnull().sum().sum())
+
+X = df[["Annual Income (k$)", "Spending Score (1-100)"]]
+X_scaled = StandardScaler().fit_transform(X)
+
+# ---------- Elbow Method ----------
+wcss = []
+for k in range(1, 11):
+    km = KMeans(n_clusters=k, n_init=10, random_state=42)
+    km.fit(X_scaled)
+    wcss.append(km.inertia_)
+plt.plot(range(1, 11), wcss, marker="o")
+plt.title("Elbow Method")
+plt.xlabel("Number of clusters (k)")
+plt.ylabel("WCSS")
+plt.show()
+
+# ---------- Dendrogram ----------
+plt.figure(figsize=(10, 5))
+dendrogram(linkage(X_scaled, method="ward"))
+plt.title("Dendrogram")
+plt.xlabel("Customers")
+plt.ylabel("Distance")
+plt.show()
+
+# ---------- K-Means (k chosen from elbow) ----------
+k = 5
+kmeans = KMeans(n_clusters=k, n_init=10, random_state=42)
+df["KMeans"] = kmeans.fit_predict(X_scaled)
+
+# ---------- Hierarchical (k chosen from dendrogram) ----------
+hc = AgglomerativeClustering(n_clusters=k, linkage="ward")
+df["Hierarchical"] = hc.fit_predict(X_scaled)
+
+print("\nSilhouette K-Means     :", round(silhouette_score(X_scaled, df["KMeans"]), 3))
+print("Silhouette Hierarchical:", round(silhouette_score(X_scaled, df["Hierarchical"]), 3))
+print("\nCluster averages (K-Means):")
+print(df.groupby("KMeans")[["Annual Income (k$)", "Spending Score (1-100)"]].mean().round(1))
+
+# ---------- Plot clusters ----------
+fig, ax = plt.subplots(1, 2, figsize=(11, 4))
+ax[0].scatter(df["Annual Income (k$)"], df["Spending Score (1-100)"], c=df["KMeans"])
+ax[0].set_title("K-Means Clusters")
+ax[1].scatter(df["Annual Income (k$)"], df["Spending Score (1-100)"], c=df["Hierarchical"])
+ax[1].set_title("Hierarchical Clusters")
+for a in ax:
+    a.set_xlabel("Annual Income (k$)")
+    a.set_ylabel("Spending Score")
+plt.tight_layout()
+plt.show()
