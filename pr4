@@ -1,0 +1,54 @@
+# PR4: Rule-Based Expert System using Propositional Logic
+# Mechanisms: Forward Chaining and Backward Chaining
+# Domain: simple medical diagnosis
+
+# Knowledge base: each rule = (list of premises, conclusion)  [P1 AND P2 => Q]
+rules = [
+    (["fever", "cough"], "flu"),
+    (["fever", "rash"], "measles"),
+    (["sneezing", "runny_nose"], "cold"),
+    (["flu", "breathlessness"], "see_doctor"),
+    (["measles"], "isolate_patient"),
+    (["cold"], "take_rest"),
+]
+
+# ---------- Forward chaining (data driven) ----------
+def forward_chaining(facts):
+    facts = set(facts)
+    changed = True
+    while changed:
+        changed = False
+        for premises, conclusion in rules:
+            if all(p in facts for p in premises) and conclusion not in facts:
+                facts.add(conclusion)
+                print("  Rule fired:", " AND ".join(premises), "=>", conclusion)
+                changed = True
+    return facts
+
+# ---------- Backward chaining (goal driven) ----------
+def backward_chaining(goal, facts, depth=0):
+    pad = "  " * depth
+    print(f"{pad}Proving: {goal}")
+    if goal in facts:
+        print(f"{pad}  '{goal}' is a known fact")
+        return True
+    for premises, conclusion in rules:
+        if conclusion == goal:
+            if all(backward_chaining(p, facts, depth + 1) for p in premises):
+                print(f"{pad}  '{goal}' proved by rule: {premises} => {goal}")
+                return True
+    print(f"{pad}  '{goal}' cannot be proved")
+    return False
+
+# ---------- Run ----------
+known = ["fever", "cough", "breathlessness"]
+print("Known facts:", known)
+
+print("\nFORWARD CHAINING")
+result = forward_chaining(known)
+print("All facts after inference:", sorted(result))
+
+print("\nBACKWARD CHAINING")
+goal = "see_doctor"
+print(f"\nCan we prove '{goal}'?", backward_chaining(goal, known))
+print("\nCan we prove 'measles'?", backward_chaining("measles", known))
