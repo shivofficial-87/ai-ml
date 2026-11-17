@@ -1,0 +1,63 @@
+# PR6: Linear Regression on California Housing
+# Evaluation: MSE, MAE, R2 Score
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+
+# ---------- Load dataset ----------
+try:
+    from sklearn.datasets import fetch_california_housing
+    data = fetch_california_housing(as_frame=True)       # needs internet first time
+except Exception:
+    from sklearn.datasets import load_diabetes           # offline backup
+    data = load_diabetes(as_frame=True)
+    print("California Housing not available, using Diabetes dataset")
+df = data.frame
+print("Shape:", df.shape)
+print(df.head())
+
+# ---------- Data preprocessing ----------
+print("\nMissing values:", df.isnull().sum().sum())
+df = df.drop_duplicates()
+print(df.describe())
+
+target = data.target.name
+X = df.drop(columns=[target])        # features
+y = df[target]                       # target
+print("\nFeatures:", list(X.columns))
+print("Target:", target)
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42)
+
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+# ---------- Linear Regression ----------
+model = LinearRegression()
+model.fit(X_train, y_train)
+y_pred = model.predict(X_test)
+print("\nIntercept:", round(model.intercept_, 3))
+print(pd.DataFrame({"Feature": X.columns, "Coefficient": model.coef_.round(3)}))
+
+# ---------- Evaluation ----------
+mse = mean_squared_error(y_test, y_pred)
+mae = mean_absolute_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+print("\nMSE :", round(mse, 4))
+print("RMSE:", round(np.sqrt(mse), 4))
+print("MAE :", round(mae, 4))
+print("R2  :", round(r2, 4))
+
+# ---------- Plot ----------
+plt.scatter(y_test, y_pred, alpha=0.4)
+plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], "r--")
+plt.xlabel("Actual")
+plt.ylabel("Predicted")
+plt.title("Actual vs Predicted")
+plt.show()
