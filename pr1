@@ -1,0 +1,54 @@
+# PR1: Intelligent Agent and PEAS Representation
+# Application: Smart Home Controller (simple reflex agent)
+import random
+
+# ---------- PEAS representation ----------
+peas = {
+    "Performance Measure": "Comfortable temperature, energy saving, security",
+    "Environment": "Rooms, temperature, light level, people, time of day",
+    "Actuators": "AC, heater, fan, lights, door lock, alarm",
+    "Sensors": "Temperature sensor, motion sensor, light sensor, door sensor",
+}
+print("PEAS REPRESENTATION")
+for key, value in peas.items():
+    print(f"{key:20}: {value}")
+
+# ---------- Environment: gives sensor readings (percepts) ----------
+def get_percept():
+    return {
+        "temp": random.randint(12, 42),
+        "motion": random.choice([True, False]),
+        "light": random.randint(0, 100),
+        "door_open": random.choice([True, False]),
+        "night": random.choice([True, False]),
+    }
+
+# ---------- Agent: condition-action rules ----------
+def agent(p):
+    actions = []
+    if p["temp"] > 30:
+        actions.append("AC ON")
+    elif p["temp"] < 18:
+        actions.append("Heater ON")
+    else:
+        actions.append("AC/Heater OFF")
+
+    if p["motion"] and p["light"] < 40:
+        actions.append("Lights ON")
+    elif not p["motion"]:
+        actions.append("Lights OFF")
+
+    if p["motion"] and 26 <= p["temp"] <= 30:
+        actions.append("Fan ON")
+
+    if p["night"] and p["door_open"]:
+        actions.append("Alarm ON and lock door")
+    return actions
+
+# ---------- Run the agent: sense -> decide -> act ----------
+random.seed(5)
+print("\nAGENT BEHAVIOUR")
+for step in range(1, 7):
+    percept = get_percept()
+    print(f"\nStep {step}: Percept = {percept}")
+    print("         Actions =", agent(percept))
